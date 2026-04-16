@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { useAuth } from '../context/AuthContext';
 
 type Props = {

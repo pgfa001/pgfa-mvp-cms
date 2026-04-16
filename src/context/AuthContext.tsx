@@ -4,8 +4,8 @@ import {
   useEffect,
   useMemo,
   useState,
-  ReactNode,
 } from 'react';
+import type { ReactNode } from 'react';
 import { login as loginApi } from '../api/auth';
 import type { LoginResponse } from '../types/api';
 

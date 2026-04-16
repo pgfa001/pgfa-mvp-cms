@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import SidebarLayout from '../components/SidebarLayout';
 import { useAuth } from '../context/AuthContext';
 import { getClubs } from '../api/clubs';
-import type ClubSummaryResponse from '../api/clubs';
+import type { ClubSummaryResponse } from '../api/clubs';
 import {
   createChallenge,
   createChallengeDemoUploadUrl,
@@ -10,7 +10,7 @@ import {
   getChallenges,
   updateChallenge,
 } from '../api/challenges';
-import type ChallengeCmsResponse from '../api/challenges';
+import type { ChallengeCmsResponse } from '../api/challenges';
 
 type ChallengeFormState = {
   id?: string;
