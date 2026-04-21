@@ -7,7 +7,7 @@ import {
   updateTeam,
 } from '../api/teams';
 import type { TeamResponse } from '../api/teams';
-import type { ClubSummaryResponse } from '../api/clubs';
+import type { GetClubsResponse } from '../api/clubs';
 import { getClubs } from '../api/clubs';
 
 type TeamFormState = {

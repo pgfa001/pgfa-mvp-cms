@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import SidebarLayout from '../components/SidebarLayout';
 import { useAuth } from '../context/AuthContext';
 import { getClubs } from '../api/clubs';
-import type { ClubSummaryResponse } from '../api/clubs';
+import type { GetClubsResponse } from '../api/clubs';
 import {
   createChallenge,
   createChallengeDemoUploadUrl,
