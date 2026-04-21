@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import SidebarLayout from '../components/SidebarLayout';
 import { useAuth } from '../context/AuthContext';
 import { getClubs } from '../api/clubs';
-import type { GetClubsResponse } from '../api/clubs';
+import type { ClubCmsResponse } from '../api/clubs';
 import {
   createChallenge,
   createChallengeDemoUploadUrl,
@@ -64,7 +64,7 @@ function toLocalDateTimeInputValue(timestamp: number) {
 
 type ChallengeModalProps = {
   title: string;
-  clubs: GetClubsResponse[];
+  clubs: ClubCmsResponse[];
   form: ChallengeFormState;
   saving: boolean;
   uploadingVideo: boolean;
@@ -246,7 +246,7 @@ function ChallengeModal({
 export default function ChallengesPage() {
   const { auth } = useAuth();
 
-  const [clubs, setClubs] = useState<GetClubsResponse[]>([]);
+  const [clubs, setClubs] = useState<ClubCmsResponse[]>([]);
   const [challenges, setChallenges] = useState<ChallengeCmsResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [pageError, setPageError] = useState<string | null>(null);
