@@ -29,7 +29,7 @@ function createEmptyForm(clubId = ''): TeamFormState {
 
 type TeamModalProps = {
   title: string;
-  clubs: ClubSummaryResponse[];
+  clubs: GetClubsResponse[];
   form: TeamFormState;
   saving: boolean;
   onChange: (next: TeamFormState) => void;
@@ -129,7 +129,7 @@ function TeamModal({
 export default function TeamsPage() {
   const { auth } = useAuth();
 
-  const [clubs, setClubs] = useState<ClubSummaryResponse[]>([]);
+  const [clubs, setClubs] = useState<GetClubsResponse[]>([]);
   const [teams, setTeams] = useState<TeamResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [pageError, setPageError] = useState<string | null>(null);

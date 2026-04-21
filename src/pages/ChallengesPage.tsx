@@ -64,7 +64,7 @@ function toLocalDateTimeInputValue(timestamp: number) {
 
 type ChallengeModalProps = {
   title: string;
-  clubs: ClubSummaryResponse[];
+  clubs: GetClubsResponse[];
   form: ChallengeFormState;
   saving: boolean;
   uploadingVideo: boolean;
@@ -246,7 +246,7 @@ function ChallengeModal({
 export default function ChallengesPage() {
   const { auth } = useAuth();
 
-  const [clubs, setClubs] = useState<ClubSummaryResponse[]>([]);
+  const [clubs, setClubs] = useState<GetClubsResponse[]>([]);
   const [challenges, setChallenges] = useState<ChallengeCmsResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [pageError, setPageError] = useState<string | null>(null);
