@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import SidebarLayout from '../components/SidebarLayout';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/auth-context';
 import { getClubs } from '../api/clubs';
 import type { ClubCmsResponse } from '../api/clubs';
 import {
@@ -10,13 +10,16 @@ import {
   getChallenges,
   updateChallenge,
 } from '../api/challenges';
-import type { ChallengeCmsResponse } from '../api/challenges';
+import type {
+  ChallengeCmsResponse,
+  ChallengeScoringType,
+} from '../api/challenges';
 
 type ChallengeFormState = {
   id?: string;
   title: string;
   description: string;
-  scoringType: string;
+  scoringType: ChallengeScoringType;
   difficulty: string;
   startAtLocal: string;
   endAtLocal: string;
@@ -25,7 +28,12 @@ type ChallengeFormState = {
   demoVideoFileName: string;
 };
 
-const scoringTypes = ['HIGH_SCORE', 'LOW_SCORE', 'TIME', 'REPS'];
+const scoringTypes: ChallengeScoringType[] = [
+  'HIGH_SCORE',
+  'LOW_SCORE',
+  'FASTEST_TIME',
+  'LONGEST_TIME',
+];
 
 function createEmptyChallengeForm(allClubIds: string[]): ChallengeFormState {
   return {
@@ -135,10 +143,13 @@ function ChallengeModal({
             <label className="field">
               <span>Scoring type</span>
               <select
-                value={form.scoringType}
-                onChange={(event) =>
-                  onChange({ ...form, scoringType: event.target.value })
-                }
+              value={form.scoringType}
+              onChange={(event) =>
+                  onChange({
+                    ...form,
+                    scoringType: event.target.value as ChallengeScoringType,
+                  })
+              }
               >
                 {scoringTypes.map((type) => (
                   <option key={type} value={type}>

@@ -4,6 +4,11 @@ export type TeamResponse = {
   id: string;
   name: string;
   clubId: string;
+  clubName?: string;
+  club?: {
+    id: string;
+    name: string;
+  };
   lowerAgeRange: number;
   upperAgeRange: number;
   createdAt: number;

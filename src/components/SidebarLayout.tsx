@@ -1,6 +1,7 @@
 import { NavLink } from 'react-router-dom';
 import type { ReactNode } from 'react';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/auth-context';
+import type { UserRole } from '../types/api';
 
 type Props = {
   title: string;
@@ -11,23 +12,23 @@ type Props = {
 type NavItem = {
   label: string;
   to: string;
-  roles: Array<'ADMIN' | 'COACH'>;
+  roles: UserRole[];
 };
 
 const navItems: NavItem[] = [
-  { label: 'Dashboard', to: '/', roles: ['ADMIN', 'COACH'] },
-  { label: 'Clubs', to: '/clubs', roles: ['ADMIN'] },
-  { label: 'Teams', to: '/teams', roles: ['ADMIN'] },
-  { label: 'Users', to: '/users', roles: ['ADMIN'] },
-  { label: 'Challenges', to: '/challenges', roles: ['ADMIN'] },
-  { label: 'Submissions', to: '/submissions', roles: ['ADMIN', 'COACH'] },
+  { label: 'Dashboard', to: '/', roles: ['ADMIN', 'SUPERADMIN', 'COACH'] },
+  { label: 'Clubs', to: '/clubs', roles: ['SUPERADMIN'] },
+  { label: 'Teams', to: '/teams', roles: ['SUPERADMIN', 'ADMIN'] },
+  { label: 'Users', to: '/users', roles: ['SUPERADMIN'] },
+  { label: 'Challenges', to: '/challenges', roles: ['SUPERADMIN'] },
+  { label: 'Submissions', to: '/submissions', roles: ['SUPERADMIN', 'ADMIN', 'COACH'] },
 ];
 
 export default function SidebarLayout({ title, subtitle, children }: Props) {
   const { auth, logout } = useAuth();
 
   const filteredNavItems = navItems.filter((item) =>
-    auth?.role ? item.roles.includes(auth.role as 'ADMIN' | 'COACH') : false
+    auth?.role ? item.roles.includes(auth.role) : false
   );
 
   return (

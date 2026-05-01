@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import SidebarLayout from '../components/SidebarLayout';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/auth-context';
 import {
   createTeam,
   getTeams,
@@ -8,7 +8,10 @@ import {
 } from '../api/teams';
 import type { TeamResponse } from '../api/teams';
 import type { ClubCmsResponse } from '../api/clubs';
-import { getClubs } from '../api/clubs';
+import { getClubDetailsById, getClubs } from '../api/clubs';
+import type { LoginResponse } from '../types/api';
+
+type ClubOption = Pick<ClubCmsResponse, 'id' | 'name'>;
 
 type TeamFormState = {
   id?: string;
@@ -29,7 +32,7 @@ function createEmptyForm(clubId = ''): TeamFormState {
 
 type TeamModalProps = {
   title: string;
-  clubs: ClubCmsResponse[];
+  clubs: ClubOption[];
   form: TeamFormState;
   saving: boolean;
   onChange: (next: TeamFormState) => void;
@@ -61,6 +64,7 @@ function TeamModal({
             <span>Club</span>
             <select
               value={form.clubId}
+              disabled={clubs.length === 1}
               onChange={(event) =>
                 onChange({ ...form, clubId: event.target.value })
               }
@@ -126,10 +130,51 @@ function TeamModal({
   );
 }
 
+function getAssignedClubIds(auth: LoginResponse | null) {
+  if (!auth) return [];
+
+  if (auth.clubIds?.length) return auth.clubIds;
+  if (auth.assignedClubIds?.length) return auth.assignedClubIds;
+  if (auth.clubId) return [auth.clubId];
+
+  return [];
+}
+
+function getTeamClubName(team: TeamResponse) {
+  return team.clubName || team.club?.name;
+}
+
+function buildScopedClubOptions(
+  teams: TeamResponse[],
+  auth: LoginResponse | null,
+  clubNames = new Map<string, string>()
+): ClubOption[] {
+  const options = new Map<string, string>();
+  const assignedClubIds = getAssignedClubIds(auth);
+
+  assignedClubIds.forEach((clubId) => {
+    options.set(
+      clubId,
+      clubNames.get(clubId) ||
+        (auth?.clubName && clubId === auth.clubId ? auth.clubName : 'Your Club')
+    );
+  });
+
+  teams.forEach((team) => {
+    if (!team.clubId) return;
+    options.set(
+      team.clubId,
+      getTeamClubName(team) || options.get(team.clubId) || `Club ${team.clubId}`
+    );
+  });
+
+  return Array.from(options.entries()).map(([id, name]) => ({ id, name }));
+}
+
 export default function TeamsPage() {
   const { auth } = useAuth();
 
-  const [clubs, setClubs] = useState<ClubCmsResponse[]>([]);
+  const [clubs, setClubs] = useState<ClubOption[]>([]);
   const [teams, setTeams] = useState<TeamResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [pageError, setPageError] = useState<string | null>(null);
@@ -153,14 +198,43 @@ export default function TeamsPage() {
         setLoading(true);
         setPageError(null);
 
-        const [clubsResponse, teamsResponse] = await Promise.all([
-          getClubs(auth.token),
-          getTeams(auth.token),
-        ]);
+        if (auth.role === 'SUPERADMIN') {
+          const [clubsResponse, teamsResponse] = await Promise.all([
+            getClubs(auth.token),
+            getTeams(auth.token),
+          ]);
 
-        setClubs(clubsResponse.clubs);
+          setClubs(clubsResponse.clubs);
+          setTeams(teamsResponse.teams);
+          setExpandedClubIds(clubsResponse.clubs.map((club) => club.id));
+          return;
+        }
+
+        const teamsResponse = await getTeams(auth.token);
+        const assignedClubIds = getAssignedClubIds(auth);
+        const clubDetails = await Promise.all(
+          assignedClubIds.map(async (clubId) => {
+            try {
+              return await getClubDetailsById(clubId);
+            } catch {
+              return null;
+            }
+          })
+        );
+        const clubNames = new Map(
+          clubDetails
+            .filter((club): club is NonNullable<typeof club> => club !== null)
+            .map((club) => [club.id, club.name])
+        );
+        const scopedClubs = buildScopedClubOptions(
+          teamsResponse.teams,
+          auth,
+          clubNames
+        );
+
+        setClubs(scopedClubs);
         setTeams(teamsResponse.teams);
-        setExpandedClubIds(clubsResponse.clubs.map((club) => club.id));
+        setExpandedClubIds(scopedClubs.map((club) => club.id));
       } catch (error) {
         const message =
           error instanceof Error ? error.message : 'Unable to load teams page.';
@@ -171,7 +245,7 @@ export default function TeamsPage() {
     };
 
     load();
-  }, [auth?.token]);
+  }, [auth]);
 
   const filteredTeams = useMemo(() => {
     return teams.filter((team) => {
@@ -209,7 +283,8 @@ export default function TeamsPage() {
   };
 
   const openAddModal = () => {
-    setAddForm(createEmptyForm(clubFilter));
+    const defaultClubId = clubFilter || (clubs.length === 1 ? clubs[0].id : '');
+    setAddForm(createEmptyForm(defaultClubId));
     setIsAddOpen(true);
   };
 
@@ -338,7 +413,11 @@ export default function TeamsPage() {
         </div>
 
         <div className="toolbar-actions">
-          <button className="primary-button" onClick={openAddModal}>
+          <button
+            className="primary-button"
+            onClick={openAddModal}
+            disabled={!clubs.length}
+          >
             Add Team
           </button>
         </div>
@@ -412,7 +491,11 @@ export default function TeamsPage() {
           {!teamsByClub.length ? (
             <div className="page-card">
               <h2>No teams found</h2>
-              <p>Try changing your filters or add a new team.</p>
+              <p>
+                {clubs.length
+                  ? 'Try changing your filters or add a new team.'
+                  : 'No assigned club was returned for this account.'}
+              </p>
             </div>
           ) : null}
         </div>

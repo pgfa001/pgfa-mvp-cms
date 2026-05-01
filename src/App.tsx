@@ -1,5 +1,6 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
-import { AuthProvider, useAuth } from './context/AuthContext';
+import { AuthProvider } from './context/AuthContext';
+import { useAuth } from './context/auth-context';
 import ProtectedRoute from './components/ProtectedRoute';
 import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
@@ -14,6 +15,11 @@ function AppRoutes() {
   const { isAuthenticated, auth } = useAuth();
 
   const isAdmin = auth?.role === 'ADMIN';
+  const isSuperAdmin = auth?.role === 'SUPERADMIN';
+  const canReviewSubmissions =
+    auth?.role === 'SUPERADMIN' ||
+    auth?.role === 'ADMIN' ||
+    auth?.role === 'COACH';
 
   return (
     <Routes>
@@ -37,7 +43,7 @@ function AppRoutes() {
         path="/clubs"
         element={
           <ProtectedRoute>
-            {isAdmin ? <ClubsPage /> : <Navigate to="/" replace />}
+            {isSuperAdmin ? <ClubsPage /> : <Navigate to="/" replace />}
           </ProtectedRoute>
         }
       />
@@ -46,7 +52,7 @@ function AppRoutes() {
         path="/teams"
         element={
           <ProtectedRoute>
-            {isAdmin ? <TeamsPage /> : <Navigate to="/" replace />}
+            {isAdmin || isSuperAdmin ? <TeamsPage /> : <Navigate to="/" replace />}
           </ProtectedRoute>
         }
       />
@@ -55,7 +61,7 @@ function AppRoutes() {
         path="/users"
         element={
           <ProtectedRoute>
-            {isAdmin ? <UsersPage /> : <Navigate to="/" replace />}
+            {isSuperAdmin ? <UsersPage /> : <Navigate to="/" replace />}
           </ProtectedRoute>
         }
       />
@@ -64,7 +70,7 @@ function AppRoutes() {
         path="/challenges"
         element={
           <ProtectedRoute>
-            {isAdmin ? <ChallengesPage /> : <Navigate to="/" replace />}
+            {isSuperAdmin ? <ChallengesPage /> : <Navigate to="/" replace />}
           </ProtectedRoute>
         }
       />
@@ -73,7 +79,7 @@ function AppRoutes() {
         path="/submissions"
         element={
           <ProtectedRoute>
-            <SubmissionsPage />
+            {canReviewSubmissions ? <SubmissionsPage /> : <Navigate to="/" replace />}
           </ProtectedRoute>
         }
       />

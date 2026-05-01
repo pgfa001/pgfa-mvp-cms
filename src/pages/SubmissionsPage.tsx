@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import SidebarLayout from '../components/SidebarLayout';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/auth-context';
 import { getChallenges } from '../api/challenges';
 import type { ChallengeCmsResponse } from '../api/challenges';
 import {

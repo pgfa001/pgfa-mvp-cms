@@ -27,6 +27,27 @@ export type CreateClubRequest = {
 
 export type UpdateClubRequest = CreateClubRequest;
 
+export type CreateClubAdminRequest = {
+  name: string;
+  username: string;
+  password: string;
+  email: string;
+  phone: string;
+  dob: string;
+};
+
+export type ClubAdminResponse = {
+  id: string;
+  name: string;
+  username: string;
+  email: string;
+  phone: string;
+  dob: string;
+  clubId: string;
+  role: 'ADMIN';
+  createdAt?: number;
+};
+
 export type CreateClubLogoUploadUrlResponse = {
   uploadIntentId: string;
   objectKey: string;
@@ -40,6 +61,15 @@ export type GetClubLogoUrlResponse = {
   expiresAt: number;
 };
 
+export type ClubDetailsResponse = {
+  id: string;
+  name: string;
+  logoUrl?: string | null;
+  primaryColor: string;
+  accentColor: string;
+  subscriptionType: SubscriptionType;
+};
+
 export async function getClubs(token: string): Promise<GetClubsResponse> {
   return apiFetch<GetClubsResponse>('/clubs', {
     method: 'GET',
@@ -47,11 +77,34 @@ export async function getClubs(token: string): Promise<GetClubsResponse> {
   });
 }
 
+export async function getClubDetailsById(
+  clubId: string
+): Promise<ClubDetailsResponse> {
+  return apiFetch<ClubDetailsResponse>(
+    `/clubs/details?id=${encodeURIComponent(clubId)}`,
+    {
+      method: 'GET',
+    }
+  );
+}
+
 export async function createClub(
   token: string,
   request: CreateClubRequest
 ): Promise<ClubCmsResponse> {
   return apiFetch<ClubCmsResponse>('/clubs', {
+    method: 'POST',
+    token,
+    body: JSON.stringify(request),
+  });
+}
+
+export async function createClubAdmin(
+  token: string,
+  clubId: string,
+  request: CreateClubAdminRequest
+): Promise<ClubAdminResponse> {
+  return apiFetch<ClubAdminResponse>(`/clubs/${clubId}/admins`, {
     method: 'POST',
     token,
     body: JSON.stringify(request),

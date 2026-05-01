@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/auth-context';
 
 export default function LoginPage() {
   const { login } = useAuth();
@@ -42,7 +42,7 @@ export default function LoginPage() {
           <p className="eyebrow">Proving Ground CMS</p>
           <h1>Log in</h1>
           <p className="subtext">
-            Coaches and admins can sign in to manage clubs, teams, challenges, and submissions.
+            Superadmins, club admins, and coaches can sign in to manage their CMS workflows.
           </p>
         </div>
 

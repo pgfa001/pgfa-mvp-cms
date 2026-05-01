@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import SidebarLayout from '../components/SidebarLayout';
-import { useAuth } from '../context/AuthContext';
+import { rememberAdminClub, useAuth } from '../context/auth-context';
 import {
   createClub,
+  createClubAdmin,
   createClubLogoUploadUrl,
   deleteClub,
   getClubLogoUrl,
@@ -25,6 +26,15 @@ type ClubFormState = {
   subscriptionType: SubscriptionType;
 };
 
+type ClubAdminFormState = {
+  name: string;
+  username: string;
+  password: string;
+  email: string;
+  phone: string;
+  dob: string;
+};
+
 const subscriptionOptions: SubscriptionType[] = ['CLUB_PAID', 'ATHLETE_PAID'];
 
 function emptyForm(): ClubFormState {
@@ -39,21 +49,38 @@ function emptyForm(): ClubFormState {
   };
 }
 
+function emptyAdminForm(): ClubAdminFormState {
+  return {
+    name: '',
+    username: '',
+    password: '',
+    email: '',
+    phone: '',
+    dob: '',
+  };
+}
+
 function ClubModal({
   title,
   form,
+  adminForm,
   saving,
   uploading,
+  requireAdmin,
   onChange,
+  onAdminChange,
   onClose,
   onSubmit,
   onUploadLogo,
 }: {
   title: string;
   form: ClubFormState;
+  adminForm?: ClubAdminFormState;
   saving: boolean;
   uploading: boolean;
+  requireAdmin?: boolean;
   onChange: (next: ClubFormState) => void;
+  onAdminChange?: (next: ClubAdminFormState) => void;
   onClose: () => void;
   onSubmit: () => void;
   onUploadLogo: (file: File) => Promise<void>;
@@ -136,6 +163,85 @@ function ClubModal({
           <div className="challenge-demo-status">
             {uploading ? 'Uploading logo...' : form.logoObjectKey ? `Logo attached: ${form.logoFileName}` : 'No logo attached'}
           </div>
+
+          {requireAdmin && adminForm && onAdminChange ? (
+            <div className="form-section">
+              <div>
+                <h3>Club Admin</h3>
+                <p className="subtext">Create the ADMIN account assigned to this club.</p>
+              </div>
+
+              <label className="field">
+                <span>Name</span>
+                <input
+                  value={adminForm.name}
+                  onChange={(e) =>
+                    onAdminChange({ ...adminForm, name: e.target.value })
+                  }
+                />
+              </label>
+
+              <div className="two-column-grid">
+                <label className="field">
+                  <span>Username</span>
+                  <input
+                    value={adminForm.username}
+                    onChange={(e) =>
+                      onAdminChange({ ...adminForm, username: e.target.value })
+                    }
+                    autoComplete="off"
+                  />
+                </label>
+
+                <label className="field">
+                  <span>Password</span>
+                  <input
+                    type="password"
+                    value={adminForm.password}
+                    onChange={(e) =>
+                      onAdminChange({ ...adminForm, password: e.target.value })
+                    }
+                    autoComplete="new-password"
+                  />
+                </label>
+              </div>
+
+              <div className="two-column-grid">
+                <label className="field">
+                  <span>Email</span>
+                  <input
+                    type="email"
+                    value={adminForm.email}
+                    onChange={(e) =>
+                      onAdminChange({ ...adminForm, email: e.target.value })
+                    }
+                  />
+                </label>
+
+                <label className="field">
+                  <span>Phone</span>
+                  <input
+                    type="tel"
+                    value={adminForm.phone}
+                    onChange={(e) =>
+                      onAdminChange({ ...adminForm, phone: e.target.value })
+                    }
+                  />
+                </label>
+              </div>
+
+              <label className="field">
+                <span>Date of birth</span>
+                <input
+                  type="date"
+                  value={adminForm.dob}
+                  onChange={(e) =>
+                    onAdminChange({ ...adminForm, dob: e.target.value })
+                  }
+                />
+              </label>
+            </div>
+          ) : null}
         </div>
 
         <div className="modal-actions">
@@ -162,6 +268,8 @@ export default function ClubsPage() {
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [addForm, setAddForm] = useState<ClubFormState>(emptyForm());
+  const [addAdminForm, setAddAdminForm] =
+    useState<ClubAdminFormState>(emptyAdminForm());
   const [editForm, setEditForm] = useState<ClubFormState>(emptyForm());
 
   useEffect(() => {
@@ -196,6 +304,24 @@ export default function ClubsPage() {
       primaryColor: form.primaryColor,
       accentColor: form.accentColor,
       subscriptionType: form.subscriptionType,
+    };
+  };
+
+  const validateAdminForm = (form: ClubAdminFormState) => {
+    if (!form.name.trim()) throw new Error('Club admin name is required.');
+    if (!form.username.trim()) throw new Error('Club admin username is required.');
+    if (!form.password) throw new Error('Club admin password is required.');
+    if (!form.email.trim()) throw new Error('Club admin email is required.');
+    if (!form.phone.trim()) throw new Error('Club admin phone is required.');
+    if (!form.dob) throw new Error('Club admin date of birth is required.');
+
+    return {
+      name: form.name.trim(),
+      username: form.username.trim(),
+      password: form.password,
+      email: form.email.trim(),
+      phone: form.phone.trim(),
+      dob: form.dob,
     };
   };
 
@@ -239,10 +365,22 @@ export default function ClubsPage() {
     try {
       setSaving(true);
       const payload = validateForm(addForm);
+      const adminPayload = validateAdminForm(addAdminForm);
       const created = await createClub(auth.token, payload);
       setClubs((current) => [created, ...current]);
+
+      try {
+        await createClubAdmin(auth.token, created.id, adminPayload);
+        rememberAdminClub(adminPayload.username, created.id, created.name);
+      } catch (error) {
+        const message =
+          error instanceof Error ? error.message : 'Unable to create club admin.';
+        throw new Error(`Club was created, but the admin user was not: ${message}`);
+      }
+
       setIsAddOpen(false);
       setAddForm(emptyForm());
+      setAddAdminForm(emptyAdminForm());
     } catch (error) {
       window.alert(error instanceof Error ? error.message : 'Unable to create club.');
     } finally {
@@ -393,9 +531,12 @@ export default function ClubsPage() {
         <ClubModal
           title="Add Club"
           form={addForm}
+          adminForm={addAdminForm}
           saving={saving}
           uploading={uploadingLogo}
+          requireAdmin
           onChange={setAddForm}
+          onAdminChange={setAddAdminForm}
           onClose={() => setIsAddOpen(false)}
           onSubmit={submitAdd}
           onUploadLogo={(file) => uploadLogo(file, addForm, setAddForm)}

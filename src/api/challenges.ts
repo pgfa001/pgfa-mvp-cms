@@ -1,11 +1,17 @@
 import { apiFetch } from './client';
 
+export type ChallengeScoringType =
+  | 'HIGH_SCORE'
+  | 'LOW_SCORE'
+  | 'FASTEST_TIME'
+  | 'LONGEST_TIME';
+
 export type ChallengeCmsResponse = {
   id: string;
   title: string;
   description: string;
   demoVideoObjectKey?: string | null;
-  scoringType: string;
+  scoringType: ChallengeScoringType;
   difficulty: number;
   startTime: number;
   endTime: number;
@@ -22,7 +28,7 @@ export type CreateChallengeCmsRequest = {
   title: string;
   description: string;
   demoVideoObjectKey?: string | null;
-  scoringType: string;
+  scoringType: ChallengeScoringType;
   difficulty: number;
   startTime: number;
   endTime: number;
@@ -33,7 +39,7 @@ export type UpdateChallengeCmsRequest = {
   title: string;
   description: string;
   demoVideoObjectKey?: string | null;
-  scoringType: string;
+  scoringType: ChallengeScoringType;
   difficulty: number;
   startTime: number;
   endTime: number;

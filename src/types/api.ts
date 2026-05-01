@@ -1,4 +1,4 @@
-export type UserRole = 'ATHLETE' | 'PARENT' | 'COACH' | 'ADMIN';
+export type UserRole = 'ATHLETE' | 'PARENT' | 'COACH' | 'ADMIN' | 'SUPERADMIN';
 
 export type SubscriptionType = 'CLUB_PAID' | 'ATHLETE_PAID';
 
@@ -12,5 +12,9 @@ export type LoginResponse = {
   userId: string;
   username: string;
   role: UserRole;
+  clubId: string | null;
+  clubName?: string | null;
+  clubIds?: string[] | null;
+  assignedClubIds?: string[] | null;
   hasAcceptedRequiredConsents: boolean;
 };
