@@ -6,7 +6,6 @@ import {
   createClubAdmin,
   createClubLogoUploadUrl,
   deleteClub,
-  getClubLogoUrl,
   getClubs,
   updateClub,
 } from '../api/clubs';
@@ -60,8 +59,12 @@ function emptyAdminForm(): ClubAdminFormState {
   };
 }
 
-function getClubLogoValue(club: ClubCmsResponse) {
-  return (club.logo ?? club.logoObjectKey ?? '').trim();
+function getClubLogoUrlValue(club: ClubCmsResponse) {
+  return (club.logoUrl ?? '').trim();
+}
+
+function getClubLogoObjectKey(club: ClubCmsResponse) {
+  return (club.logoObjectKey ?? '').trim();
 }
 
 function ClubModal({
@@ -266,7 +269,6 @@ export default function ClubsPage() {
   const [pageError, setPageError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
-  const [previewingId, setPreviewingId] = useState<string | null>(null);
 
   const [search, setSearch] = useState('');
   const [isAddOpen, setIsAddOpen] = useState(false);
@@ -408,13 +410,13 @@ export default function ClubsPage() {
   };
 
   const openEdit = (club: ClubCmsResponse) => {
-    const logoValue = getClubLogoValue(club);
+    const logoObjectKey = getClubLogoObjectKey(club);
 
     setEditForm({
       id: club.id,
       name: club.name,
-      logoObjectKey: logoValue,
-      logoFileName: logoValue.split('/').pop() ?? '',
+      logoObjectKey,
+      logoFileName: logoObjectKey.split('/').pop() ?? '',
       accessCode: club.accessCode,
       primaryColor: club.primaryColor,
       accentColor: club.accentColor,
@@ -433,19 +435,6 @@ export default function ClubsPage() {
       setClubs((current) => current.filter((club) => club.id !== clubId));
     } catch (error) {
       window.alert(error instanceof Error ? error.message : 'Unable to delete club.');
-    }
-  };
-
-  const previewLogo = async (clubId: string) => {
-    if (!auth?.token) return;
-    try {
-      setPreviewingId(clubId);
-      const response = await getClubLogoUrl(auth.token, clubId);
-      window.open(response.logoUrl, '_blank', 'noopener,noreferrer');
-    } catch (error) {
-      window.alert(error instanceof Error ? error.message : 'Unable to open logo.');
-    } finally {
-      setPreviewingId(null);
     }
   };
 
@@ -480,7 +469,8 @@ export default function ClubsPage() {
       ) : filtered.length ? (
         <div className="challenge-list">
           {filtered.map((club) => {
-            const hasLogo = getClubLogoValue(club).length > 0;
+            const logoUrl = getClubLogoUrlValue(club);
+            const hasLogo = logoUrl.length > 0;
 
             return (
               <div className="challenge-row-card" key={club.id}>
@@ -505,20 +495,20 @@ export default function ClubsPage() {
                     </div>
                     <div>
                       <strong>Logo</strong>
-                      <div>{hasLogo ? 'Attached' : 'None'}</div>
+                      <div>
+                        {hasLogo ? (
+                          <a href={logoUrl} target="_blank" rel="noreferrer">
+                            View logo
+                          </a>
+                        ) : (
+                          'None'
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
 
                 <div className="challenge-row-actions">
-                  {hasLogo ? (
-                    <button
-                      className="secondary-button"
-                      onClick={() => previewLogo(club.id)}
-                    >
-                      {previewingId === club.id ? 'Opening...' : 'Preview Logo'}
-                    </button>
-                  ) : null}
                   <button className="secondary-button" onClick={() => openEdit(club)}>
                     Edit
                   </button>
