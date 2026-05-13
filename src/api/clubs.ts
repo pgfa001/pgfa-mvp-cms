@@ -4,6 +4,7 @@ import type { SubscriptionType } from '../types/api';
 export type ClubCmsResponse = {
   id: string;
   name: string;
+  logo?: string | null;
   logoObjectKey?: string | null;
   accessCode: string;
   primaryColor: string;

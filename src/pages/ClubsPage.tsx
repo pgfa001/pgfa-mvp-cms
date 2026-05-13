@@ -60,6 +60,10 @@ function emptyAdminForm(): ClubAdminFormState {
   };
 }
 
+function getClubLogoValue(club: ClubCmsResponse) {
+  return (club.logo ?? club.logoObjectKey ?? '').trim();
+}
+
 function ClubModal({
   title,
   form,
@@ -404,11 +408,13 @@ export default function ClubsPage() {
   };
 
   const openEdit = (club: ClubCmsResponse) => {
+    const logoValue = getClubLogoValue(club);
+
     setEditForm({
       id: club.id,
       name: club.name,
-      logoObjectKey: club.logoObjectKey ?? '',
-      logoFileName: club.logoObjectKey?.split('/').pop() ?? '',
+      logoObjectKey: logoValue,
+      logoFileName: logoValue.split('/').pop() ?? '',
       accessCode: club.accessCode,
       primaryColor: club.primaryColor,
       accentColor: club.accentColor,
@@ -473,52 +479,56 @@ export default function ClubsPage() {
         <div className="page-card"><h2>Unable to load clubs</h2><p>{pageError}</p></div>
       ) : filtered.length ? (
         <div className="challenge-list">
-          {filtered.map((club) => (
-            <div className="challenge-row-card" key={club.id}>
-              <div className="challenge-row-main">
-                <div className="challenge-row-top">
-                  <h2>{club.name}</h2>
-                  <span className="status-pill active">{club.subscriptionType}</span>
+          {filtered.map((club) => {
+            const hasLogo = getClubLogoValue(club).length > 0;
+
+            return (
+              <div className="challenge-row-card" key={club.id}>
+                <div className="challenge-row-main">
+                  <div className="challenge-row-top">
+                    <h2>{club.name}</h2>
+                    <span className="status-pill active">{club.subscriptionType}</span>
+                  </div>
+
+                  <div className="challenge-meta-grid">
+                    <div>
+                      <strong>Access Code</strong>
+                      <div>{club.accessCode}</div>
+                    </div>
+                    <div>
+                      <strong>Primary Color</strong>
+                      <div>{club.primaryColor}</div>
+                    </div>
+                    <div>
+                      <strong>Accent Color</strong>
+                      <div>{club.accentColor}</div>
+                    </div>
+                    <div>
+                      <strong>Logo</strong>
+                      <div>{hasLogo ? 'Attached' : 'None'}</div>
+                    </div>
+                  </div>
                 </div>
 
-                <div className="challenge-meta-grid">
-                  <div>
-                    <strong>Access Code</strong>
-                    <div>{club.accessCode}</div>
-                  </div>
-                  <div>
-                    <strong>Primary Color</strong>
-                    <div>{club.primaryColor}</div>
-                  </div>
-                  <div>
-                    <strong>Accent Color</strong>
-                    <div>{club.accentColor}</div>
-                  </div>
-                  <div>
-                    <strong>Logo</strong>
-                    <div>{club.logoObjectKey ? 'Attached' : 'None'}</div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="challenge-row-actions">
-                {club.logoObjectKey ? (
-                  <button
-                    className="secondary-button"
-                    onClick={() => previewLogo(club.id)}
-                  >
-                    {previewingId === club.id ? 'Opening...' : 'Preview Logo'}
+                <div className="challenge-row-actions">
+                  {hasLogo ? (
+                    <button
+                      className="secondary-button"
+                      onClick={() => previewLogo(club.id)}
+                    >
+                      {previewingId === club.id ? 'Opening...' : 'Preview Logo'}
+                    </button>
+                  ) : null}
+                  <button className="secondary-button" onClick={() => openEdit(club)}>
+                    Edit
                   </button>
-                ) : null}
-                <button className="secondary-button" onClick={() => openEdit(club)}>
-                  Edit
-                </button>
-                <button className="secondary-button" onClick={() => handleDelete(club.id)}>
-                  Delete
-                </button>
+                  <button className="secondary-button" onClick={() => handleDelete(club.id)}>
+                    Delete
+                  </button>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       ) : (
         <div className="page-card">
