@@ -61,7 +61,7 @@ function AppRoutes() {
         path="/users"
         element={
           <ProtectedRoute>
-            {isSuperAdmin ? <UsersPage /> : <Navigate to="/" replace />}
+            {isAdmin || isSuperAdmin ? <UsersPage /> : <Navigate to="/" replace />}
           </ProtectedRoute>
         }
       />

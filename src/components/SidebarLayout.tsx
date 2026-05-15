@@ -19,7 +19,7 @@ const navItems: NavItem[] = [
   { label: 'Dashboard', to: '/', roles: ['ADMIN', 'SUPERADMIN', 'COACH'] },
   { label: 'Clubs', to: '/clubs', roles: ['SUPERADMIN'] },
   { label: 'Teams', to: '/teams', roles: ['SUPERADMIN', 'ADMIN'] },
-  { label: 'Users', to: '/users', roles: ['SUPERADMIN'] },
+  { label: 'Users', to: '/users', roles: ['SUPERADMIN', 'ADMIN'] },
   { label: 'Challenges', to: '/challenges', roles: ['SUPERADMIN'] },
   { label: 'Submissions', to: '/submissions', roles: ['SUPERADMIN', 'ADMIN', 'COACH'] },
 ];
