@@ -94,6 +94,14 @@ input {
   border-radius: 14px;
 }
 
+.success-banner {
+  background: #ecfdf5;
+  border: 1px solid #bbf7d0;
+  color: #166534;
+  padding: 12px 14px;
+  border-radius: 14px;
+}
+
 .primary-button,
 .secondary-button {
   height: 48px;
@@ -450,6 +458,48 @@ input {
 
 .form-section h3 {
   margin: 0 0 6px;
+}
+
+.users-page-stack,
+.user-search-results {
+  display: grid;
+  gap: 16px;
+}
+
+.user-search-form,
+.user-create-form {
+  margin-top: 20px;
+}
+
+.user-search-results {
+  margin-top: 20px;
+}
+
+.user-result-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  padding: 16px;
+}
+
+.user-result-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 14px;
+}
+
+.user-result-top h3 {
+  margin: 0 0 4px;
+}
+
+.user-result-top p {
+  margin: 0;
+  color: #6b7280;
+}
+
+.user-search-empty {
+  padding: 20px 0 0;
 }
 
 .two-column-grid {
