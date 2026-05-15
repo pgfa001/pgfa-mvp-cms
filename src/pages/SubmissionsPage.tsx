@@ -14,6 +14,9 @@ import type {
   SubmissionValidationStatus,
 } from '../api/submissions';
 
+const submissionLimitOptions = [10, 25, 50] as const;
+type SubmissionLimit = (typeof submissionLimitOptions)[number];
+
 function formatDate(timestamp?: number | null) {
   if (!timestamp) return '-';
 
@@ -136,6 +139,7 @@ export default function SubmissionsPage() {
 
   const [search, setSearch] = useState('');
   const [teamFilter, setTeamFilter] = useState('');
+  const [limitFilter, setLimitFilter] = useState<SubmissionLimit>(10);
   const [statusFilter, setStatusFilter] = useState<
     'ALL' | SubmissionValidationStatus
   >('ALL');
@@ -185,7 +189,8 @@ export default function SubmissionsPage() {
         const response = await getChallengeReviewSubmissions(
           auth.token,
           selectedChallengeId,
-          teamFilter || undefined
+          teamFilter || undefined,
+          limitFilter
         );
 
         setSubmissions(response.submissions);
@@ -199,7 +204,7 @@ export default function SubmissionsPage() {
     };
 
     loadSubmissions();
-  }, [auth?.token, selectedChallengeId, teamFilter]);
+  }, [auth?.token, selectedChallengeId, teamFilter, limitFilter]);
 
   const uniqueTeams = useMemo(() => {
     const seen = new Map<string, string>();
@@ -228,7 +233,7 @@ export default function SubmissionsPage() {
 
         return matchesSearch && matchesStatus;
       })
-      .sort((a, b) => b.createdAt - a.createdAt);
+      .sort((a, b) => a.rank - b.rank || b.createdAt - a.createdAt);
   }, [submissions, search, statusFilter]);
 
   const openSubmission = async (submissionId: string) => {
@@ -334,6 +339,22 @@ export default function SubmissionsPage() {
           </label>
 
           <label className="field toolbar-field">
+            <span>Leaderboard size</span>
+            <select
+              value={limitFilter}
+              onChange={(event) =>
+                setLimitFilter(Number(event.target.value) as SubmissionLimit)
+              }
+            >
+              {submissionLimitOptions.map((limit) => (
+                <option key={limit} value={limit}>
+                  Top {limit}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="field toolbar-field">
             <span>Status</span>
             <select
               value={statusFilter}
@@ -387,6 +408,10 @@ export default function SubmissionsPage() {
                 <p className="submission-row-subtitle">{submission.teamName}</p>
 
                 <div className="submission-meta-grid">
+                  <div>
+                    <strong>Rank</strong>
+                    <div>{submission.rank}</div>
+                  </div>
                   <div>
                     <strong>Score</strong>
                     <div>{submission.score}</div>

@@ -7,6 +7,7 @@ export type SubmissionValidationStatus =
 
 export type ChallengeReviewSubmissionItemResponse = {
   submissionId: string;
+  rank: number;
   athleteId: string;
   athleteName: string;
   teamId: string;
@@ -51,11 +52,20 @@ export type VerifyChallengeSubmissionResponse = {
 export async function getChallengeReviewSubmissions(
   token: string,
   challengeId: string,
-  teamId?: string
+  teamId?: string,
+  limit?: number
 ): Promise<GetChallengeReviewSubmissionsResponse> {
-  const query = teamId
-    ? `?teamId=${encodeURIComponent(teamId)}`
-    : '';
+  const params = new URLSearchParams();
+
+  if (teamId) {
+    params.set('teamId', teamId);
+  }
+
+  if (limit) {
+    params.set('limit', String(limit));
+  }
+
+  const query = params.toString() ? `?${params.toString()}` : '';
 
   return apiFetch<GetChallengeReviewSubmissionsResponse>(
     `/challenges/${challengeId}/review-submissions${query}`,
