@@ -4,6 +4,18 @@ type RequestOptions = RequestInit & {
   token?: string | null;
 };
 
+export class ApiError extends Error {
+  status: number;
+  data: unknown;
+
+  constructor(message: string, status: number, data: unknown) {
+    super(message);
+    this.name = 'ApiError';
+    this.status = status;
+    this.data = data;
+  }
+}
+
 export async function apiFetch<T>(
   path: string,
   options: RequestOptions = {}
@@ -25,7 +37,7 @@ export async function apiFetch<T>(
   if (!response.ok) {
     const message =
       data?.message || `Request failed with status ${response.status}`;
-    throw new Error(message);
+    throw new ApiError(message, response.status, data);
   }
 
   return data as T;

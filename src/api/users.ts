@@ -26,6 +26,17 @@ export type SearchUsersResponse = {
   users: UserSearchResult[];
 };
 
+export type ResetUserPasswordRequest = {
+  password?: string;
+};
+
+export type ResetUserPasswordResponse = {
+  userId: string;
+  username: string;
+  temporaryPassword: string;
+  message: string;
+};
+
 export async function searchUsers(
   token: string,
   request: SearchUsersRequest
@@ -54,4 +65,19 @@ export async function searchUsers(
     method: 'GET',
     token,
   });
+}
+
+export async function resetUserPassword(
+  token: string,
+  userId: string,
+  request: ResetUserPasswordRequest
+): Promise<ResetUserPasswordResponse> {
+  return apiFetch<ResetUserPasswordResponse>(
+    `/users/${userId}/reset-password`,
+    {
+      method: 'POST',
+      token,
+      body: JSON.stringify(request),
+    }
+  );
 }

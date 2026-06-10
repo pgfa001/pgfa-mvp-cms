@@ -10,8 +10,12 @@ import {
 import type {
   CreateClubAdminRequest,
 } from '../api/clubs';
-import { searchUsers } from '../api/users';
-import type { UserSearchResult } from '../api/users';
+import { resetUserPassword, searchUsers } from '../api/users';
+import type {
+  ResetUserPasswordResponse,
+  UserSearchResult,
+} from '../api/users';
+import { ApiError } from '../api/client';
 import type { UserRole } from '../types/api';
 
 type AdminFormState = CreateClubAdminRequest & {
@@ -82,7 +86,7 @@ function validateAdminForm(form: AdminFormState): AdminFormState {
 }
 
 export default function UsersPage() {
-  const { auth } = useAuth();
+  const { auth, logout } = useAuth();
   const isSuperAdmin = auth?.role === 'SUPERADMIN';
   const isAdmin = auth?.role === 'ADMIN';
   const [clubs, setClubs] = useState<ClubOption[]>([]);
@@ -98,6 +102,15 @@ export default function UsersPage() {
   const [searching, setSearching] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
   const [hasSearched, setHasSearched] = useState(false);
+  const [canResetPasswords, setCanResetPasswords] = useState(true);
+  const [resetTarget, setResetTarget] = useState<UserSearchResult | null>(null);
+  const [resetPassword, setResetPassword] = useState('');
+  const [resetSaving, setResetSaving] = useState(false);
+  const [resetError, setResetError] = useState<string | null>(null);
+  const [resetFieldError, setResetFieldError] = useState<string | null>(null);
+  const [resetSuccess, setResetSuccess] =
+    useState<ResetUserPasswordResponse | null>(null);
+  const [copiedPassword, setCopiedPassword] = useState(false);
 
   useEffect(() => {
     const loadClubs = async () => {
@@ -214,6 +227,83 @@ export default function UsersPage() {
       .map((club) => club.name);
 
     return names.length ? names.join(', ') : '-';
+  };
+
+  const openResetPassword = (user: UserSearchResult) => {
+    setResetTarget(user);
+    setResetPassword('');
+    setResetError(null);
+    setResetFieldError(null);
+  };
+
+  const closeResetModal = () => {
+    setResetTarget(null);
+    setResetPassword('');
+    setResetError(null);
+    setResetFieldError(null);
+  };
+
+  const closeResetSuccess = () => {
+    setResetSuccess(null);
+    setCopiedPassword(false);
+  };
+
+  const submitResetPassword = async () => {
+    if (!auth?.token || !resetTarget) return;
+
+    try {
+      setResetSaving(true);
+      setResetError(null);
+      setResetFieldError(null);
+
+      const password = resetPassword.trim();
+      const response = await resetUserPassword(auth.token, resetTarget.id, {
+        ...(password ? { password } : {}),
+      });
+
+      closeResetModal();
+      setResetSuccess(response);
+    } catch (error) {
+      if (error instanceof ApiError) {
+        if (error.status === 401) {
+          logout();
+          return;
+        }
+
+        if (
+          error.status === 400 &&
+          error.message === 'Only super admins can reset user passwords'
+        ) {
+          setCanResetPasswords(false);
+          setResetError(error.message);
+          return;
+        }
+
+        if (
+          error.status === 400 &&
+          error.message === 'Password must be at least 8 characters'
+        ) {
+          setResetFieldError(error.message);
+          return;
+        }
+
+        setResetError(error.message);
+        return;
+      }
+
+      const message =
+        error instanceof Error ? error.message : 'Unable to reset password.';
+      setResetError(message);
+    } finally {
+      setResetSaving(false);
+    }
+  };
+
+  const copyTemporaryPassword = async () => {
+    if (!resetSuccess) return;
+
+    await navigator.clipboard.writeText(resetSuccess.temporaryPassword);
+    setCopiedPassword(true);
   };
 
   return (
@@ -348,7 +438,17 @@ export default function UsersPage() {
                           <h3>{user.name}</h3>
                           <p>{user.username}</p>
                         </div>
-                        <span className="status-pill past">{user.role}</span>
+                        <div className="user-result-actions">
+                          <span className="status-pill past">{user.role}</span>
+                          {isSuperAdmin && canResetPasswords ? (
+                            <button
+                              className="secondary-button"
+                              onClick={() => openResetPassword(user)}
+                            >
+                              Reset Password
+                            </button>
+                          ) : null}
+                        </div>
                       </div>
 
                       <div className="challenge-meta-grid">
@@ -503,6 +603,106 @@ export default function UsersPage() {
           </div>
         ) : null}
       </div>
+
+      {resetTarget ? (
+        <div className="modal-backdrop">
+          <div className="modal-card">
+            <div className="modal-header">
+              <h2>Reset Password</h2>
+              <button className="icon-button" onClick={closeResetModal}>
+                ✕
+              </button>
+            </div>
+
+            <div className="modal-form">
+              <p className="subtext">
+                Reset password for <strong>{resetTarget.username}</strong>?
+              </p>
+
+              <label className="field">
+                <span>New password</span>
+                <input
+                  type="password"
+                  value={resetPassword}
+                  disabled={resetSaving}
+                  placeholder="Leave blank to auto-generate"
+                  autoComplete="new-password"
+                  onChange={(event) => {
+                    setResetPassword(event.target.value);
+                    setResetFieldError(null);
+                  }}
+                />
+              </label>
+
+              {resetFieldError ? (
+                <div className="error-banner">{resetFieldError}</div>
+              ) : null}
+              {resetError ? <div className="error-banner">{resetError}</div> : null}
+            </div>
+
+            <div className="modal-actions">
+              <button
+                className="secondary-button"
+                onClick={closeResetModal}
+                disabled={resetSaving}
+              >
+                Cancel
+              </button>
+              <button
+                className="primary-button"
+                onClick={submitResetPassword}
+                disabled={resetSaving}
+              >
+                {resetSaving ? 'Resetting...' : 'Reset Password'}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {resetSuccess ? (
+        <div className="modal-backdrop">
+          <div className="modal-card">
+            <div className="modal-header">
+              <h2>Password Reset</h2>
+              <button className="icon-button" onClick={closeResetSuccess}>
+                ✕
+              </button>
+            </div>
+
+            <div className="modal-form">
+              <div className="submission-detail-block">
+                <strong>Username</strong>
+                <div>{resetSuccess.username}</div>
+              </div>
+
+              <div className="submission-detail-block">
+                <strong>Temporary password</strong>
+                <div className="temporary-password-row">
+                  <code>{resetSuccess.temporaryPassword}</code>
+                  <button
+                    className="secondary-button"
+                    onClick={copyTemporaryPassword}
+                  >
+                    {copiedPassword ? 'Copied' : 'Copy'}
+                  </button>
+                </div>
+              </div>
+
+              <div className="success-banner">{resetSuccess.message}</div>
+              <p className="subtext">
+                This password will only be shown once.
+              </p>
+            </div>
+
+            <div className="modal-actions">
+              <button className="primary-button" onClick={closeResetSuccess}>
+                Done
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </SidebarLayout>
   );
 }
