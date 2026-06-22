@@ -9,6 +9,7 @@ import TeamsPage from './pages/TeamsPage';
 import UsersPage from './pages/UsersPage';
 import ChallengesPage from './pages/ChallengesPage';
 import SubmissionsPage from './pages/SubmissionsPage';
+import TermsOfServicePage from './pages/TermsOfServicePage';
 import './styles.css';
 
 function AppRoutes() {
@@ -29,6 +30,8 @@ function AppRoutes() {
           isAuthenticated ? <Navigate to="/" replace /> : <LoginPage />
         }
       />
+
+      <Route path="/terms-of-service" element={<TermsOfServicePage />} />
 
       <Route
         path="/"

@@ -16,6 +16,42 @@ body {
   background: #f5f7fb;
 }
 
+.terms-page {
+  background: #ffffff;
+  min-height: 100vh;
+  padding: 72px 24px;
+}
+
+.terms-document {
+  color: #000000;
+  font-family: Arial, sans-serif;
+  font-size: 11pt;
+  line-height: 1.45;
+  margin: 0 auto;
+  max-width: 468pt;
+}
+
+.terms-document p {
+  margin: 0 0 12pt;
+}
+
+.terms-document h2 {
+  color: #000000;
+  font-family: Arial, sans-serif;
+  font-size: 13pt;
+  line-height: 1.25;
+  margin: 14pt 0 4pt;
+}
+
+.terms-document ul {
+  margin: 0 0 12pt 36pt;
+  padding: 0;
+}
+
+.terms-document li {
+  margin: 0 0 8pt;
+}
+
 button,
 input {
   font: inherit;
