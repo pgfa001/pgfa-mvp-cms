@@ -11,11 +11,21 @@ export type UserSearchResult = {
   avatarUrl?: string | null;
   position?: string | null;
   clubId?: string | null;
+  club_id?: string | null;
   clubIds: string[];
+  club_ids?: string[];
   clubs?: Array<{ id: string; name?: string | null }>;
   teamId?: string | null;
+  team_id?: string | null;
   teamIds: string[];
-  teams?: Array<{ id: string; name?: string | null; clubId?: string | null }>;
+  team_ids?: string[];
+  teams?: Array<{
+    id?: string | null;
+    teamId?: string | null;
+    team_id?: string | null;
+    name?: string | null;
+    clubId?: string | null;
+  }>;
 };
 
 export type SearchUsersRequest = {

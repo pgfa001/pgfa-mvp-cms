@@ -288,33 +288,68 @@ function toStringArray(value: unknown): string[] {
 
   if (Array.isArray(value)) {
     return value
-      .map((item) => {
-        if (typeof item === 'string') return item;
+      .flatMap((item) => {
+        if (typeof item === 'string') return toStringArray(item);
         if (
           item &&
           typeof item === 'object' &&
           'id' in item &&
           typeof item.id === 'string'
         ) {
-          return item.id;
+          return item.id.trim();
         }
-        return null;
+        if (
+          item &&
+          typeof item === 'object' &&
+          'teamId' in item &&
+          typeof item.teamId === 'string'
+        ) {
+          return item.teamId.trim();
+        }
+        if (
+          item &&
+          typeof item === 'object' &&
+          'team_id' in item &&
+          typeof item.team_id === 'string'
+        ) {
+          return item.team_id.trim();
+        }
+        return [];
       })
       .filter((item): item is string => Boolean(item));
   }
 
-  return typeof value === 'string' ? [value] : [];
+  if (typeof value !== 'string') return [];
+
+  const trimmed = value.trim();
+  if (!trimmed) return [];
+
+  if (trimmed.startsWith('[')) {
+    try {
+      return toStringArray(JSON.parse(trimmed));
+    } catch {
+      return [trimmed];
+    }
+  }
+
+  return trimmed.includes(',')
+    ? trimmed.split(',').map((item) => item.trim()).filter(Boolean)
+    : [trimmed];
 }
 
 function normalizeUserSearchResult(user: UserSearchResult): UserSearchResult {
   const clubIds = [
     ...toStringArray(user.clubIds),
     ...toStringArray(user.clubId),
+    ...toStringArray(user.club_id),
+    ...toStringArray(user.club_ids),
     ...toStringArray(user.clubs),
   ];
   const teamIds = [
     ...toStringArray(user.teamIds),
     ...toStringArray(user.teamId),
+    ...toStringArray(user.team_id),
+    ...toStringArray(user.team_ids),
     ...toStringArray(user.teams),
   ];
 
@@ -598,8 +633,13 @@ export default function UsersPage() {
     const names = teams
       .filter((team) => teamIds.includes(team.id))
       .map((team) => `${team.name} (${getTeamClubName(team)})`);
+    const matchedTeamIds = new Set(
+      teams.filter((team) => teamIds.includes(team.id)).map((team) => team.id)
+    );
+    const unmatchedTeamIds = teamIds.filter((teamId) => !matchedTeamIds.has(teamId));
 
-    return names.length ? names.join(', ') : '-';
+    return [...names, ...unmatchedTeamIds.map((teamId) => `Unknown team ${teamId}`)]
+      .join(', ') || '-';
   };
 
   const getTeamsForClub = (clubId: string) => {
@@ -608,13 +648,24 @@ export default function UsersPage() {
 
   const getTeamsForUserClubs = (user: UserSearchResult) => {
     if (user.clubIds.length) {
-      return teams.filter((team) => user.clubIds.includes(team.clubId));
+      return teams.filter(
+        (team) =>
+          user.clubIds.includes(team.clubId) || user.teamIds.includes(team.id)
+      );
     }
 
     const assignedTeams = teams.filter((team) => user.teamIds?.includes(team.id));
     const inferredClubIds = new Set(assignedTeams.map((team) => team.clubId));
 
     return teams.filter((team) => inferredClubIds.has(team.clubId));
+  };
+
+  const getUnmatchedTeamIds = (user: UserSearchResult) => {
+    const availableTeamIds = new Set(
+      getTeamsForUserClubs(user).map((team) => team.id)
+    );
+
+    return user.teamIds.filter((teamId) => !availableTeamIds.has(teamId));
   };
 
   const updateCmsUserRole = (role: CmsCreatableUserRole) => {
@@ -2053,6 +2104,12 @@ export default function UsersPage() {
                     {!getTeamsForUserClubs(actionTarget).length ? (
                       <div className="empty-state-inline">
                         No teams found for the user&apos;s current club.
+                      </div>
+                    ) : null}
+                    {getUnmatchedTeamIds(actionTarget).length ? (
+                      <div className="error-banner">
+                        Current team IDs were returned but do not match any
+                        loaded teams: {getUnmatchedTeamIds(actionTarget).join(', ')}
                       </div>
                     ) : null}
                   </div>
