@@ -10,8 +10,12 @@ export type UserSearchResult = {
   phone?: string | null;
   avatarUrl?: string | null;
   position?: string | null;
+  clubId?: string | null;
   clubIds: string[];
+  clubs?: Array<{ id: string; name?: string | null }>;
+  teamId?: string | null;
   teamIds?: string[];
+  teams?: Array<{ id: string; name?: string | null; clubId?: string | null }>;
 };
 
 export type SearchUsersRequest = {

@@ -283,6 +283,48 @@ function validateCmsUserForm(form: CmsUserFormState): CreateCmsUserRequest {
   };
 }
 
+function toStringArray(value: unknown): string[] {
+  if (!value) return [];
+
+  if (Array.isArray(value)) {
+    return value
+      .map((item) => {
+        if (typeof item === 'string') return item;
+        if (
+          item &&
+          typeof item === 'object' &&
+          'id' in item &&
+          typeof item.id === 'string'
+        ) {
+          return item.id;
+        }
+        return null;
+      })
+      .filter((item): item is string => Boolean(item));
+  }
+
+  return typeof value === 'string' ? [value] : [];
+}
+
+function normalizeUserSearchResult(user: UserSearchResult): UserSearchResult {
+  const clubIds = [
+    ...toStringArray(user.clubIds),
+    ...toStringArray(user.clubId),
+    ...toStringArray(user.clubs),
+  ];
+  const teamIds = [
+    ...toStringArray(user.teamIds),
+    ...toStringArray(user.teamId),
+    ...toStringArray(user.teams),
+  ];
+
+  return {
+    ...user,
+    clubIds: Array.from(new Set(clubIds)),
+    teamIds: Array.from(new Set(teamIds)),
+  };
+}
+
 export default function UsersPage() {
   const { auth, logout } = useAuth();
   const isSuperAdmin = auth?.role === 'SUPERADMIN';
@@ -446,7 +488,10 @@ export default function UsersPage() {
       setSuperAdminSuccess(`Created superadmin account for ${created.username}.`);
 
       if (!searchForm.role || searchForm.role === 'SUPERADMIN') {
-        setSearchResults((current) => [created, ...current]);
+        setSearchResults((current) => [
+          normalizeUserSearchResult(created),
+          ...current,
+        ]);
       }
     } catch (error) {
       const message =
@@ -478,8 +523,9 @@ export default function UsersPage() {
       });
       setCmsUserSuccess(`Created ${created.role} account for ${created.username}.`);
 
-      const createdClubIds = created.clubIds?.length
-        ? created.clubIds
+      const normalizedCreated = normalizeUserSearchResult(created);
+      const createdClubIds = normalizedCreated.clubIds.length
+        ? normalizedCreated.clubIds
         : [payload.clubId];
       const matchesRole = !searchForm.role || searchForm.role === created.role;
       const matchesClub =
@@ -487,7 +533,7 @@ export default function UsersPage() {
 
       if (matchesRole && matchesClub) {
         setSearchResults((current) => [
-          { ...created, clubIds: createdClubIds },
+          { ...normalizedCreated, clubIds: createdClubIds },
           ...current,
         ]);
       }
@@ -518,7 +564,7 @@ export default function UsersPage() {
         limit: searchForm.limit,
       });
 
-      setSearchResults(response.users);
+      setSearchResults(response.users.map(normalizeUserSearchResult));
     } catch (error) {
       const message =
         error instanceof Error ? error.message : 'Unable to search users.';
@@ -649,13 +695,15 @@ export default function UsersPage() {
   };
 
   const openUserAction = (mode: UserActionMode, user: UserSearchResult) => {
+    const normalizedUser = normalizeUserSearchResult(user);
+
     setActionMode(mode);
-    setActionTarget(user);
+    setActionTarget(normalizedUser);
     setActionError(null);
-    setUsernameValue(user.username);
-    setClubValue(user.clubIds[0] ?? '');
-    setClubValues([...user.clubIds]);
-    setTeamValues([...(user.teamIds ?? [])]);
+    setUsernameValue(normalizedUser.username);
+    setClubValue(normalizedUser.clubIds[0] ?? '');
+    setClubValues([...normalizedUser.clubIds]);
+    setTeamValues([...(normalizedUser.teamIds ?? [])]);
   };
 
   const closeUserAction = () => {
