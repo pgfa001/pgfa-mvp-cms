@@ -6,11 +6,12 @@ export type UserSearchResult = {
   name: string;
   username: string;
   role: UserRole;
-  email: string;
-  phone: string;
+  email?: string | null;
+  phone?: string | null;
   avatarUrl?: string | null;
   position?: string | null;
   clubIds: string[];
+  teamIds?: string[];
 };
 
 export type SearchUsersRequest = {
@@ -36,6 +37,60 @@ export type ResetUserPasswordResponse = {
   temporaryPassword: string;
   message: string;
 };
+
+export type UserManagementResponse = {
+  userId: string;
+  username: string;
+  clubIds: string[];
+  teamIds: string[];
+  message: string;
+};
+
+export type CreateSuperAdminRequest = {
+  name: string;
+  username: string;
+  password: string;
+  email: string;
+  phone: string;
+  dob: string;
+  gender: string;
+  state: string;
+  town: string;
+  socialMediaHandle: string;
+};
+
+export type CreateSuperAdminResponse = UserSearchResult & {
+  role: 'SUPERADMIN';
+};
+
+export type CmsCreatableUserRole = 'ATHLETE' | 'COACH' | 'PARENT';
+
+export type CreateCmsChildAthleteRequest = {
+  name: string;
+  username: string;
+  password: string;
+  dob: string;
+  gender: string;
+  position: string;
+  teamIds: string[];
+};
+
+export type CreateCmsUserRequest = {
+  clubId: string;
+  name: string;
+  username: string;
+  password: string;
+  role: CmsCreatableUserRole;
+  dob: string;
+  email?: string;
+  phone?: string;
+  gender?: string;
+  position?: string;
+  teamIds?: string[];
+  childAccounts?: CreateCmsChildAthleteRequest[];
+};
+
+export type CreateCmsUserResponse = UserSearchResult;
 
 export async function searchUsers(
   token: string,
@@ -80,4 +135,76 @@ export async function resetUserPassword(
       body: JSON.stringify(request),
     }
   );
+}
+
+export async function updateUserUsername(
+  token: string,
+  userId: string,
+  username: string
+): Promise<UserManagementResponse> {
+  return apiFetch<UserManagementResponse>(`/users/${userId}/username`, {
+    method: 'PUT',
+    token,
+    body: JSON.stringify({ username }),
+  });
+}
+
+export async function updateUserClub(
+  token: string,
+  userId: string,
+  clubIdOrIds: string | string[]
+): Promise<UserManagementResponse> {
+  return apiFetch<UserManagementResponse>(`/users/${userId}/club`, {
+    method: 'PUT',
+    token,
+    body: JSON.stringify(
+      Array.isArray(clubIdOrIds)
+        ? { clubIds: clubIdOrIds }
+        : { clubId: clubIdOrIds }
+    ),
+  });
+}
+
+export async function updateUserTeams(
+  token: string,
+  userId: string,
+  teamIds: string[]
+): Promise<UserManagementResponse> {
+  return apiFetch<UserManagementResponse>(`/users/${userId}/teams`, {
+    method: 'PUT',
+    token,
+    body: JSON.stringify({ teamIds }),
+  });
+}
+
+export async function deleteUser(
+  token: string,
+  userId: string
+): Promise<UserManagementResponse> {
+  return apiFetch<UserManagementResponse>(`/users/${userId}`, {
+    method: 'DELETE',
+    token,
+  });
+}
+
+export async function createSuperAdmin(
+  token: string,
+  request: CreateSuperAdminRequest
+): Promise<CreateSuperAdminResponse> {
+  return apiFetch<CreateSuperAdminResponse>('/users/superadmins', {
+    method: 'POST',
+    token,
+    body: JSON.stringify(request),
+  });
+}
+
+export async function createCmsUser(
+  token: string,
+  request: CreateCmsUserRequest
+): Promise<CreateCmsUserResponse> {
+  return apiFetch<CreateCmsUserResponse>('/users', {
+    method: 'POST',
+    token,
+    body: JSON.stringify(request),
+  });
 }

@@ -32,6 +32,7 @@ type ClubAdminFormState = {
   email: string;
   phone: string;
   dob: string;
+  clubIds: string[];
 };
 
 const subscriptionOptions: SubscriptionType[] = ['CLUB_PAID', 'ATHLETE_PAID'];
@@ -56,6 +57,7 @@ function emptyAdminForm(): ClubAdminFormState {
     email: '',
     phone: '',
     dob: '',
+    clubIds: [],
   };
 }
 
@@ -71,6 +73,7 @@ function ClubModal({
   title,
   form,
   adminForm,
+  availableAdminClubs = [],
   saving,
   uploading,
   requireAdmin,
@@ -83,6 +86,7 @@ function ClubModal({
   title: string;
   form: ClubFormState;
   adminForm?: ClubAdminFormState;
+  availableAdminClubs?: ClubCmsResponse[];
   saving: boolean;
   uploading: boolean;
   requireAdmin?: boolean;
@@ -247,6 +251,35 @@ function ClubModal({
                   }
                 />
               </label>
+
+              {availableAdminClubs.length ? (
+                <div className="field">
+                  <span>Additional clubs</span>
+                  <div className="checkbox-grid user-team-grid">
+                    {availableAdminClubs.map((club) => {
+                      const checked = adminForm.clubIds.includes(club.id);
+
+                      return (
+                        <label key={club.id} className="checkbox-card">
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={() =>
+                              onAdminChange({
+                                ...adminForm,
+                                clubIds: checked
+                                  ? adminForm.clubIds.filter((id) => id !== club.id)
+                                  : [...adminForm.clubIds, club.id],
+                              })
+                            }
+                          />
+                          <span>{club.name}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+              ) : null}
             </div>
           ) : null}
         </div>
@@ -328,6 +361,7 @@ export default function ClubsPage() {
       email: form.email.trim(),
       phone: form.phone.trim(),
       dob: form.dob,
+      clubIds: form.clubIds,
     };
   };
 
@@ -532,6 +566,7 @@ export default function ClubsPage() {
           title="Add Club"
           form={addForm}
           adminForm={addAdminForm}
+          availableAdminClubs={clubs}
           saving={saving}
           uploading={uploadingLogo}
           requireAdmin

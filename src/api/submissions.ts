@@ -52,10 +52,15 @@ export type VerifyChallengeSubmissionResponse = {
 export async function getChallengeReviewSubmissions(
   token: string,
   challengeId: string,
+  clubId?: string,
   teamId?: string,
   limit?: number
 ): Promise<GetChallengeReviewSubmissionsResponse> {
   const params = new URLSearchParams();
+
+  if (clubId) {
+    params.set('clubId', clubId);
+  }
 
   if (teamId) {
     params.set('teamId', teamId);

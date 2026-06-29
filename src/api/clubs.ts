@@ -35,6 +35,7 @@ export type CreateClubAdminRequest = {
   email: string;
   phone: string;
   dob: string;
+  clubIds?: string[];
 };
 
 export type ClubAdminResponse = {
@@ -45,6 +46,7 @@ export type ClubAdminResponse = {
   phone: string;
   dob: string;
   clubId: string;
+  clubIds: string[];
   role: 'ADMIN';
   createdAt?: number;
 };

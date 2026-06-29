@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import SidebarLayout from '../components/SidebarLayout';
 import { useAuth } from '../context/auth-context';
 import { getChallenges } from '../api/challenges';
 import type { ChallengeCmsResponse } from '../api/challenges';
+import { getClubDetailsById, getClubs } from '../api/clubs';
 import {
   getChallengeReviewSubmissions,
   getSubmissionDetails,
@@ -16,6 +17,11 @@ import type {
 
 const submissionLimitOptions = [10, 25, 50] as const;
 type SubmissionLimit = (typeof submissionLimitOptions)[number];
+
+type ClubOption = {
+  id: string;
+  name: string;
+};
 
 function formatDate(timestamp?: number | null) {
   if (!timestamp) return '-';
@@ -126,8 +132,11 @@ function VerifyModal({
 
 export default function SubmissionsPage() {
   const { auth } = useAuth();
+  const isSuperAdmin = auth?.role === 'SUPERADMIN';
+  const isAdmin = auth?.role === 'ADMIN';
 
   const [challenges, setChallenges] = useState<ChallengeCmsResponse[]>([]);
+  const [clubs, setClubs] = useState<ClubOption[]>([]);
   const [selectedChallengeId, setSelectedChallengeId] = useState('');
 
   const [submissions, setSubmissions] = useState<
@@ -138,6 +147,7 @@ export default function SubmissionsPage() {
   const [pageError, setPageError] = useState<string | null>(null);
 
   const [search, setSearch] = useState('');
+  const [clubFilter, setClubFilter] = useState('');
   const [teamFilter, setTeamFilter] = useState('');
   const [limitFilter, setLimitFilter] = useState<SubmissionLimit>(10);
   const [statusFilter, setStatusFilter] = useState<
@@ -149,6 +159,39 @@ export default function SubmissionsPage() {
   const [detailsLoading, setDetailsLoading] = useState(false);
   const [verifying, setVerifying] = useState(false);
 
+  const loadScopedClubs = useCallback(async (loadedChallenges: ChallengeCmsResponse[]) => {
+    if (!auth?.token) return [];
+
+    if (isSuperAdmin) {
+      const response = await getClubs(auth.token);
+      return response.clubs.map((club) => ({ id: club.id, name: club.name }));
+    }
+
+    const clubIds = new Set<string>();
+
+    if (isAdmin) {
+      auth.clubIds?.forEach((clubId) => clubIds.add(clubId));
+      if (auth.clubId) clubIds.add(auth.clubId);
+    } else {
+      loadedChallenges.forEach((challenge) => {
+        challenge.clubIds.forEach((clubId) => clubIds.add(clubId));
+      });
+    }
+
+    const clubDetails = await Promise.all(
+      Array.from(clubIds).map(async (clubId) => {
+        try {
+          const club = await getClubDetailsById(clubId);
+          return { id: club.id, name: club.name };
+        } catch {
+          return { id: clubId, name: `Club ${clubId}` };
+        }
+      })
+    );
+
+    return clubDetails;
+  }, [auth?.clubId, auth?.clubIds, auth?.token, isAdmin, isSuperAdmin]);
+
   useEffect(() => {
     const loadChallenges = async () => {
       if (!auth?.token) return;
@@ -159,6 +202,8 @@ export default function SubmissionsPage() {
 
         const response = await getChallenges(auth.token);
         setChallenges(response.challenges);
+        const scopedClubs = await loadScopedClubs(response.challenges);
+        setClubs(scopedClubs);
 
         if (response.challenges.length > 0) {
           setSelectedChallengeId(response.challenges[0].id);
@@ -173,7 +218,7 @@ export default function SubmissionsPage() {
     };
 
     loadChallenges();
-  }, [auth?.token]);
+  }, [auth?.token, loadScopedClubs]);
 
   useEffect(() => {
     const loadSubmissions = async () => {
@@ -189,6 +234,7 @@ export default function SubmissionsPage() {
         const response = await getChallengeReviewSubmissions(
           auth.token,
           selectedChallengeId,
+          clubFilter || undefined,
           teamFilter || undefined,
           limitFilter
         );
@@ -204,7 +250,7 @@ export default function SubmissionsPage() {
     };
 
     loadSubmissions();
-  }, [auth?.token, selectedChallengeId, teamFilter, limitFilter]);
+  }, [auth?.token, selectedChallengeId, clubFilter, teamFilter, limitFilter]);
 
   const uniqueTeams = useMemo(() => {
     const seen = new Map<string, string>();
@@ -301,6 +347,7 @@ export default function SubmissionsPage() {
               value={selectedChallengeId}
               onChange={(event) => {
                 setSelectedChallengeId(event.target.value);
+                setClubFilter('');
                 setTeamFilter('');
               }}
             >
@@ -308,6 +355,26 @@ export default function SubmissionsPage() {
               {challenges.map((challenge) => (
                 <option key={challenge.id} value={challenge.id}>
                   {challenge.title}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="field toolbar-field">
+            <span>Club</span>
+            <select
+              value={clubFilter}
+              onChange={(event) => {
+                setClubFilter(event.target.value);
+                setTeamFilter('');
+              }}
+            >
+              <option value="">
+                {isSuperAdmin ? 'All clubs' : 'All scoped clubs'}
+              </option>
+              {clubs.map((club) => (
+                <option key={club.id} value={club.id}>
+                  {club.name}
                 </option>
               ))}
             </select>
