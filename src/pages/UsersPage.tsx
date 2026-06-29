@@ -703,7 +703,7 @@ export default function UsersPage() {
     setUsernameValue(normalizedUser.username);
     setClubValue(normalizedUser.clubIds[0] ?? '');
     setClubValues([...normalizedUser.clubIds]);
-    setTeamValues([...(normalizedUser.teamIds ?? [])]);
+    setTeamValues([...normalizedUser.teamIds]);
   };
 
   const closeUserAction = () => {

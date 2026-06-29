@@ -14,7 +14,7 @@ export type UserSearchResult = {
   clubIds: string[];
   clubs?: Array<{ id: string; name?: string | null }>;
   teamId?: string | null;
-  teamIds?: string[];
+  teamIds: string[];
   teams?: Array<{ id: string; name?: string | null; clubId?: string | null }>;
 };
 
