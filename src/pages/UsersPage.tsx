@@ -560,6 +560,17 @@ export default function UsersPage() {
     return teams.filter((team) => team.clubId === clubId);
   };
 
+  const getTeamsForUserClubs = (user: UserSearchResult) => {
+    if (user.clubIds.length) {
+      return teams.filter((team) => user.clubIds.includes(team.clubId));
+    }
+
+    const assignedTeams = teams.filter((team) => user.teamIds?.includes(team.id));
+    const inferredClubIds = new Set(assignedTeams.map((team) => team.clubId));
+
+    return teams.filter((team) => inferredClubIds.has(team.clubId));
+  };
+
   const updateCmsUserRole = (role: CmsCreatableUserRole) => {
     setCmsUserForm({
       ...cmsUserForm,
@@ -643,8 +654,8 @@ export default function UsersPage() {
     setActionError(null);
     setUsernameValue(user.username);
     setClubValue(user.clubIds[0] ?? '');
-    setClubValues(user.clubIds);
-    setTeamValues(user.teamIds ?? []);
+    setClubValues([...user.clubIds]);
+    setTeamValues([...(user.teamIds ?? [])]);
   };
 
   const closeUserAction = () => {
@@ -756,9 +767,17 @@ export default function UsersPage() {
 
     const selectedTeams = teams.filter((team) => teamValues.includes(team.id));
     const selectedClubIds = new Set(selectedTeams.map((team) => team.clubId));
+    const availableTeamIds = new Set(
+      getTeamsForUserClubs(actionTarget).map((team) => team.id)
+    );
 
     if (selectedClubIds.size > 1) {
       setActionError('Selected teams must belong to the same club.');
+      return;
+    }
+
+    if (teamValues.some((teamId) => !availableTeamIds.has(teamId))) {
+      setActionError("Selected teams must belong to the user's current club.");
       return;
     }
 
@@ -1954,7 +1973,7 @@ export default function UsersPage() {
                   <div className="field">
                     <span>Teams</span>
                     <div className="checkbox-grid user-team-grid">
-                      {teams.map((team) => {
+                      {getTeamsForUserClubs(actionTarget).map((team) => {
                         const checked = teamValues.includes(team.id);
 
                         return (
@@ -1983,6 +2002,11 @@ export default function UsersPage() {
                         );
                       })}
                     </div>
+                    {!getTeamsForUserClubs(actionTarget).length ? (
+                      <div className="empty-state-inline">
+                        No teams found for the user&apos;s current club.
+                      </div>
+                    ) : null}
                   </div>
                 ) : (
                   <div className="error-banner">
@@ -2020,7 +2044,12 @@ export default function UsersPage() {
                     : 'primary-button'
                 }
                 onClick={submitUserAction}
-                disabled={actionSaving || (actionMode === 'teams' && !teams.length)}
+                disabled={
+                  actionSaving ||
+                  (actionMode === 'teams' &&
+                    actionTarget.role !== 'SUPERADMIN' &&
+                    !getTeamsForUserClubs(actionTarget).length)
+                }
               >
                 {getActionSubmitLabel()}
               </button>
