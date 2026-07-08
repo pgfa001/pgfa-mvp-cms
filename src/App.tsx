@@ -12,6 +12,7 @@ import SubmissionsPage from './pages/SubmissionsPage';
 import TermsOfServicePage from './pages/TermsOfServicePage';
 import SupportPage from './pages/SupportPage';
 import MarketingPage from './pages/MarketingPage';
+import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
 import './styles.css';
 
 function AppRoutes() {
@@ -36,6 +37,8 @@ function AppRoutes() {
       <Route path="/terms-of-service" element={<TermsOfServicePage />} />
       <Route path="/support" element={<SupportPage />} />
       <Route path="/marketing" element={<MarketingPage />} />
+      <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
+      <Route path="/privacy" element={<PrivacyPolicyPage />} />
 
       <Route
         path="/"

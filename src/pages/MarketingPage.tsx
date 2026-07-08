@@ -28,6 +28,9 @@ export default function MarketingPage() {
             <a className="public-secondary-link" href="/terms-of-service">
               Terms of Service
             </a>
+            <a className="public-secondary-link" href="/privacy-policy">
+              Privacy Policy
+            </a>
           </div>
         </div>
       </section>
