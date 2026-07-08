@@ -3,6 +3,13 @@
     sans-serif;
   color: #111827;
   background: #f5f7fb;
+  --pg-black: #050505;
+  --pg-panel: #111111;
+  --pg-panel-soft: #181818;
+  --pg-gold: #d8bd00;
+  --pg-gold-soft: #332a08;
+  --pg-text: #ffffff;
+  --pg-muted: #a7a7b2;
 }
 
 * {
@@ -50,6 +57,176 @@ body {
 
 .terms-document li {
   margin: 0 0 8pt;
+}
+
+.public-page {
+  background: var(--pg-black);
+  color: var(--pg-text);
+  min-height: 100vh;
+}
+
+.public-content {
+  margin: 0 auto;
+  max-width: 760px;
+  padding: 96px 24px;
+}
+
+.public-content h1,
+.marketing-hero-copy h1 {
+  font-size: clamp(2.4rem, 7vw, 5rem);
+  line-height: 0.95;
+  margin: 0 0 24px;
+}
+
+.public-page .eyebrow {
+  color: var(--pg-gold);
+}
+
+.public-content p,
+.marketing-hero-copy p,
+.marketing-section p,
+.marketing-feature-grid p {
+  color: var(--pg-muted);
+  font-size: 1.08rem;
+  line-height: 1.65;
+  margin: 0;
+}
+
+.public-support-page {
+  align-items: center;
+  display: grid;
+  padding: 24px;
+}
+
+.public-support-content {
+  background: linear-gradient(180deg, #121212 0%, #070707 100%);
+  border: 1px solid rgba(216, 189, 0, 0.55);
+  border-radius: 28px;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.45);
+  padding: 48px;
+}
+
+.public-logo {
+  border-radius: 22px;
+  display: block;
+  height: 96px;
+  margin: 0 0 28px;
+  object-fit: cover;
+  width: 96px;
+}
+
+.public-primary-link,
+.public-secondary-link {
+  align-items: center;
+  border-radius: 18px;
+  display: inline-flex;
+  font-weight: 800;
+  height: 52px;
+  justify-content: center;
+  margin-top: 28px;
+  padding: 0 20px;
+  text-decoration: none;
+}
+
+.public-primary-link {
+  background: var(--pg-gold);
+  color: #050505;
+}
+
+.public-secondary-link {
+  background: transparent;
+  border: 1px solid rgba(216, 189, 0, 0.8);
+  color: var(--pg-gold);
+}
+
+.public-link-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.marketing-page {
+  background: var(--pg-black);
+}
+
+.marketing-hero {
+  align-items: center;
+  display: grid;
+  gap: 56px;
+  grid-template-columns: minmax(340px, 0.9fr) minmax(0, 1fr);
+  min-height: 92vh;
+  overflow: hidden;
+  padding: 64px clamp(24px, 6vw, 96px);
+}
+
+.marketing-hero-media {
+  align-items: center;
+  background:
+    radial-gradient(circle at 18% 14%, rgba(216, 189, 0, 0.26), transparent 28%),
+    linear-gradient(180deg, #171717 0%, #050505 100%);
+  border: 1px solid rgba(216, 189, 0, 0.48);
+  border-radius: 34px;
+  display: grid;
+  justify-items: center;
+  min-height: 700px;
+  overflow: hidden;
+  padding: 34px;
+  position: relative;
+}
+
+.marketing-phone-shot {
+  border: 2px solid rgba(216, 189, 0, 0.76);
+  border-radius: 34px;
+  box-shadow: 0 26px 90px rgba(0, 0, 0, 0.62);
+  display: block;
+  max-height: 660px;
+  max-width: min(100%, 340px);
+  object-fit: cover;
+  width: 100%;
+}
+
+.marketing-hero-copy {
+  max-width: 640px;
+}
+
+.marketing-hero-copy .public-logo {
+  height: 112px;
+  width: 112px;
+}
+
+.marketing-section {
+  background: #0b0b0b;
+  border-top: 1px solid rgba(216, 189, 0, 0.42);
+  display: grid;
+  gap: 32px;
+  margin: 0;
+  padding: 72px clamp(24px, 6vw, 96px) 96px;
+}
+
+.marketing-section h2 {
+  font-size: clamp(2rem, 4vw, 3.2rem);
+  line-height: 1;
+  margin: 0 0 16px;
+  max-width: 880px;
+}
+
+.marketing-feature-grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(3, 1fr);
+  max-width: 1120px;
+}
+
+.marketing-feature-grid article {
+  background: var(--pg-panel);
+  border: 1px solid rgba(216, 189, 0, 0.48);
+  border-radius: 20px;
+  padding: 24px;
+}
+
+.marketing-feature-grid h3 {
+  color: var(--pg-text);
+  margin: 0 0 10px;
 }
 
 button,
@@ -878,6 +1055,30 @@ input {
 }
 
 @media (max-width: 960px) {
+  .public-support-content {
+    border-radius: 22px;
+    padding: 32px 24px;
+  }
+
+  .marketing-hero {
+    gap: 32px;
+    grid-template-columns: 1fr;
+    padding: 40px 20px;
+  }
+
+  .marketing-hero-media {
+    min-height: 520px;
+    order: 2;
+  }
+
+  .marketing-hero-copy {
+    order: 1;
+  }
+
+  .marketing-feature-grid {
+    grid-template-columns: 1fr;
+  }
+
   .submission-row-card {
     flex-direction: column;
   }
