@@ -13,6 +13,7 @@ import TermsOfServicePage from './pages/TermsOfServicePage';
 import SupportPage from './pages/SupportPage';
 import MarketingPage from './pages/MarketingPage';
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
+import DeleteDataPage from './pages/DeleteDataPage';
 import './styles.css';
 
 function AppRoutes() {
@@ -39,6 +40,8 @@ function AppRoutes() {
       <Route path="/marketing" element={<MarketingPage />} />
       <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
       <Route path="/privacy" element={<PrivacyPolicyPage />} />
+      <Route path="/delete-data" element={<DeleteDataPage />} />
+      <Route path="/data-deletion" element={<DeleteDataPage />} />
 
       <Route
         path="/"

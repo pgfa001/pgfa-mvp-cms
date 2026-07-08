@@ -95,6 +95,11 @@ export default function PrivacyPolicyPage() {
           administration needs, legal requirements, safety, fraud prevention, or
           backup retention.
         </p>
+        <p>
+          You can also visit our{' '}
+          <a href="/delete-data">Data Deletion Request page</a> for deletion
+          instructions.
+        </p>
 
         <h2>Changes to This Policy</h2>
         <p>

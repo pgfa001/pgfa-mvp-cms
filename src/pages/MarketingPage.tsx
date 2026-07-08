@@ -31,6 +31,9 @@ export default function MarketingPage() {
             <a className="public-secondary-link" href="/privacy-policy">
               Privacy Policy
             </a>
+            <a className="public-secondary-link" href="/delete-data">
+              Delete Data
+            </a>
           </div>
         </div>
       </section>
