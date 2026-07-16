@@ -154,6 +154,14 @@ body {
   font-weight: 800;
 }
 
+.public-policy-document .public-primary-link {
+  color: #050505;
+}
+
+.public-policy-document .public-secondary-link {
+  color: var(--pg-gold);
+}
+
 .public-logo {
   border-radius: 22px;
   display: block;
