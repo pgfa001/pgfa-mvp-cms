@@ -707,12 +707,15 @@ export default function UsersPage() {
 
   const getSubscriptionStatus = (user: UserSearchResult) => {
     if (user.role !== 'ATHLETE') return '-';
-    if (!user.subscription) return 'No subscription';
+    const subscription = user.subscription;
 
-    const access = user.subscription.hasAccess ? 'Access' : 'No access';
-    const source = user.subscription.source || user.subscription.status;
+    if (!subscription || !subscription.hasAccess) return 'No subscription';
+    if (subscription.source === 'CLUB_PAID') return 'Active (Club Paid)';
+    if (subscription.manualPremiumGranted) return 'Active (Manual Premium)';
+    if (subscription.status === 'TRIALING') return 'Trialing';
+    if (subscription.status === 'ACTIVE') return 'Active';
 
-    return `${access} (${source})`;
+    return 'Active';
   };
 
   const getManualPremiumStatus = (user: UserSearchResult) => {
