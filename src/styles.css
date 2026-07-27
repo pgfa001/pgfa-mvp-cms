@@ -401,6 +401,11 @@ input {
   color: #991b1b;
 }
 
+.warning-button {
+  background: #fef3c7;
+  color: #92400e;
+}
+
 .danger-primary-button {
   background: #991b1b;
 }

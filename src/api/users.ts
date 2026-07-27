@@ -6,10 +6,14 @@ export type UserSearchResult = {
   name: string;
   username: string;
   role: UserRole;
+  gender?: string | null;
   email?: string | null;
   phone?: string | null;
   avatarUrl?: string | null;
   position?: string | null;
+  state?: string | null;
+  town?: string | null;
+  socialMediaHandle?: string | null;
   clubId?: string | null;
   club_id?: string | null;
   clubIds: string[];
@@ -26,6 +30,22 @@ export type UserSearchResult = {
     name?: string | null;
     clubId?: string | null;
   }>;
+  subscription?: AthleteSubscriptionSummary | null;
+};
+
+export type AthleteSubscriptionSummary = {
+  status: string;
+  hasAccess: boolean;
+  source: string;
+  trialStartedAt?: number | null;
+  trialEndsAt?: number | null;
+  currentPeriodEndsAt?: number | null;
+  cancelAtPeriodEnd?: boolean;
+  manualPremiumGranted: boolean;
+  manualPremiumGrantedAt?: number | null;
+  manualPremiumExpiresAt?: number | null;
+  manualPremiumReason?: string | null;
+  upgradeRequired?: boolean;
 };
 
 export type SearchUsersRequest = {
@@ -105,6 +125,11 @@ export type CreateCmsUserRequest = {
 };
 
 export type CreateCmsUserResponse = UserSearchResult;
+
+export type GrantManualPremiumRequest = {
+  expiresAt?: number;
+  reason?: string;
+};
 
 export async function searchUsers(
   token: string,
@@ -221,4 +246,32 @@ export async function createCmsUser(
     token,
     body: JSON.stringify(request),
   });
+}
+
+export async function grantManualPremium(
+  token: string,
+  athleteUserId: string,
+  request: GrantManualPremiumRequest
+): Promise<unknown> {
+  return apiFetch<unknown>(
+    `/subscriptions/athletes/${athleteUserId}/manual-premium`,
+    {
+      method: 'PUT',
+      token,
+      body: JSON.stringify(request),
+    }
+  );
+}
+
+export async function revokeManualPremium(
+  token: string,
+  athleteUserId: string
+): Promise<unknown> {
+  return apiFetch<unknown>(
+    `/subscriptions/athletes/${athleteUserId}/manual-premium`,
+    {
+      method: 'DELETE',
+      token,
+    }
+  );
 }

@@ -16,7 +16,9 @@ import {
   createCmsUser,
   createSuperAdmin,
   deleteUser,
+  grantManualPremium,
   resetUserPassword,
+  revokeManualPremium,
   searchUsers,
   updateUserClub,
   updateUserTeams,
@@ -44,6 +46,8 @@ type ClubOption = {
 };
 
 type UserActionMode = 'username' | 'club' | 'teams' | 'delete';
+
+type PremiumModalMode = 'grant' | 'revoke';
 
 type SearchFormState = {
   query: string;
@@ -151,6 +155,33 @@ function emptyCmsUserForm(): CmsUserFormState {
     teamIds: [],
     childAccounts: [emptyChildAthleteForm()],
   };
+}
+
+function formatTimestamp(timestamp?: number | null) {
+  if (!timestamp) return '-';
+
+  return new Intl.DateTimeFormat(undefined, {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  }).format(new Date(timestamp));
+}
+
+function timestampToDateTimeInput(timestamp?: number | null) {
+  if (!timestamp) return '';
+
+  const date = new Date(timestamp);
+  const offset = date.getTimezoneOffset();
+  const localDate = new Date(date.getTime() - offset * 60_000);
+
+  return localDate.toISOString().slice(0, 16);
+}
+
+function dateTimeInputToTimestamp(value: string) {
+  if (!value) return undefined;
+
+  const timestamp = new Date(value).getTime();
+
+  return Number.isNaN(timestamp) ? undefined : timestamp;
 }
 
 function validateAdminForm(form: AdminFormState): AdminFormState {
@@ -400,6 +431,12 @@ export default function UsersPage() {
   const [resetSuccess, setResetSuccess] =
     useState<ResetUserPasswordResponse | null>(null);
   const [copiedPassword, setCopiedPassword] = useState(false);
+  const [premiumTarget, setPremiumTarget] = useState<UserSearchResult | null>(null);
+  const [premiumMode, setPremiumMode] = useState<PremiumModalMode>('grant');
+  const [premiumReason, setPremiumReason] = useState('');
+  const [premiumExpiresAt, setPremiumExpiresAt] = useState('');
+  const [premiumSaving, setPremiumSaving] = useState(false);
+  const [premiumError, setPremiumError] = useState<string | null>(null);
   const [actionMode, setActionMode] = useState<UserActionMode | null>(null);
   const [actionTarget, setActionTarget] = useState<UserSearchResult | null>(null);
   const [usernameValue, setUsernameValue] = useState('');
@@ -666,6 +703,30 @@ export default function UsersPage() {
     );
 
     return user.teamIds.filter((teamId) => !availableTeamIds.has(teamId));
+  };
+
+  const getSubscriptionStatus = (user: UserSearchResult) => {
+    if (user.role !== 'ATHLETE') return '-';
+    if (!user.subscription) return 'No subscription';
+
+    const access = user.subscription.hasAccess ? 'Access' : 'No access';
+    const source = user.subscription.source || user.subscription.status;
+
+    return `${access} (${source})`;
+  };
+
+  const getManualPremiumStatus = (user: UserSearchResult) => {
+    if (user.role !== 'ATHLETE') return '-';
+    if (!user.subscription?.manualPremiumGranted) return 'Not granted';
+
+    const expiresAt = user.subscription.manualPremiumExpiresAt
+      ? `, expires ${formatTimestamp(user.subscription.manualPremiumExpiresAt)}`
+      : ', no expiration';
+    const reason = user.subscription.manualPremiumReason
+      ? ` - ${user.subscription.manualPremiumReason}`
+      : '';
+
+    return `Granted${expiresAt}${reason}`;
   };
 
   const updateCmsUserRole = (role: CmsCreatableUserRole) => {
@@ -944,6 +1005,119 @@ export default function UsersPage() {
     return 'Save Changes';
   };
 
+  const openPremiumModal = (user: UserSearchResult) => {
+    setPremiumTarget(user);
+    setPremiumMode(user.subscription?.manualPremiumGranted ? 'revoke' : 'grant');
+    setPremiumReason(user.subscription?.manualPremiumReason ?? '');
+    setPremiumExpiresAt(
+      timestampToDateTimeInput(user.subscription?.manualPremiumExpiresAt)
+    );
+    setPremiumError(null);
+  };
+
+  const closePremiumModal = () => {
+    setPremiumTarget(null);
+    setPremiumMode('grant');
+    setPremiumReason('');
+    setPremiumExpiresAt('');
+    setPremiumError(null);
+  };
+
+  const updatePremiumInSearchResults = (
+    userId: string,
+    next: {
+      granted: boolean;
+      expiresAt?: number | null;
+      reason?: string | null;
+    }
+  ) => {
+    setSearchResults((current) =>
+      current.map((user) => {
+        if (user.id !== userId) return user;
+
+        const existingSubscription = user.subscription ?? {
+          status: 'ACTIVE',
+          hasAccess: next.granted,
+          source: 'MANUAL_PREMIUM',
+          manualPremiumGranted: next.granted,
+        };
+
+        return {
+          ...user,
+          subscription: {
+            ...existingSubscription,
+            hasAccess: next.granted ? true : existingSubscription.hasAccess,
+            manualPremiumGranted: next.granted,
+            manualPremiumGrantedAt: next.granted
+              ? Date.now()
+              : existingSubscription.manualPremiumGrantedAt ?? null,
+            manualPremiumExpiresAt: next.granted
+              ? next.expiresAt ?? null
+              : null,
+            manualPremiumReason: next.granted ? next.reason ?? null : null,
+          },
+        };
+      })
+    );
+  };
+
+  const submitPremiumUpdate = async () => {
+    if (!auth?.token || !premiumTarget) return;
+
+    if (premiumTarget.role !== 'ATHLETE') {
+      setPremiumError('Manual premium access can only be managed for athletes.');
+      return;
+    }
+
+    try {
+      setPremiumSaving(true);
+      setPremiumError(null);
+
+      if (premiumMode === 'grant') {
+        const expiresAt = dateTimeInputToTimestamp(premiumExpiresAt);
+        const reason = premiumReason.trim();
+
+        await grantManualPremium(auth.token, premiumTarget.id, {
+          ...(expiresAt ? { expiresAt } : {}),
+          ...(reason ? { reason } : {}),
+        });
+        updatePremiumInSearchResults(premiumTarget.id, {
+          granted: true,
+          expiresAt: expiresAt ?? null,
+          reason: reason || null,
+        });
+        setManagementMessage(
+          `Manual premium access granted for ${premiumTarget.username}.`
+        );
+      } else {
+        await revokeManualPremium(auth.token, premiumTarget.id);
+        updatePremiumInSearchResults(premiumTarget.id, {
+          granted: false,
+          expiresAt: null,
+          reason: null,
+        });
+        setManagementMessage(
+          `Manual premium access revoked for ${premiumTarget.username}.`
+        );
+      }
+
+      closePremiumModal();
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 401) {
+        logout();
+        return;
+      }
+
+      const message =
+        error instanceof Error
+          ? error.message
+          : 'Unable to update premium access.';
+      setPremiumError(message);
+    } finally {
+      setPremiumSaving(false);
+    }
+  };
+
   const openResetPassword = (user: UserSearchResult) => {
     setResetTarget(user);
     setResetPassword('');
@@ -1183,6 +1357,20 @@ export default function UsersPage() {
                                   Teams
                                 </button>
                               ) : null}
+                              {user.role === 'ATHLETE' ? (
+                                <button
+                                  className={
+                                    user.subscription?.manualPremiumGranted
+                                      ? 'secondary-button warning-button'
+                                      : 'secondary-button'
+                                  }
+                                  onClick={() => openPremiumModal(user)}
+                                >
+                                  {user.subscription?.manualPremiumGranted
+                                    ? 'Revoke Premium'
+                                    : 'Grant Premium'}
+                                </button>
+                              ) : null}
                               {canResetPasswords ? (
                                 <button
                                   className="secondary-button"
@@ -1224,6 +1412,18 @@ export default function UsersPage() {
                           <strong>Teams</strong>
                           <div>{getTeamNames(user.teamIds)}</div>
                         </div>
+                        {user.role === 'ATHLETE' ? (
+                          <>
+                            <div>
+                              <strong>Subscription</strong>
+                              <div>{getSubscriptionStatus(user)}</div>
+                            </div>
+                            <div>
+                              <strong>Manual Premium</strong>
+                              <div>{getManualPremiumStatus(user)}</div>
+                            </div>
+                          </>
+                        ) : null}
                       </div>
                     </div>
                   </div>
@@ -2157,6 +2357,93 @@ export default function UsersPage() {
                 }
               >
                 {getActionSubmitLabel()}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {premiumTarget ? (
+        <div className="modal-backdrop">
+          <div className="modal-card">
+            <div className="modal-header">
+              <h2>
+                {premiumMode === 'grant'
+                  ? 'Grant Premium Access'
+                  : 'Revoke Premium Access'}
+              </h2>
+              <button className="icon-button" onClick={closePremiumModal}>
+                ✕
+              </button>
+            </div>
+
+            <div className="modal-form">
+              <p className="subtext">
+                Managing <strong>{premiumTarget.username}</strong>
+              </p>
+
+              {premiumMode === 'grant' ? (
+                <>
+                  <label className="field">
+                    <span>Expiration</span>
+                    <input
+                      type="datetime-local"
+                      value={premiumExpiresAt}
+                      disabled={premiumSaving}
+                      onChange={(event) =>
+                        setPremiumExpiresAt(event.target.value)
+                      }
+                    />
+                  </label>
+
+                  <label className="field">
+                    <span>Reason</span>
+                    <input
+                      value={premiumReason}
+                      disabled={premiumSaving}
+                      placeholder="Scholarship"
+                      onChange={(event) => setPremiumReason(event.target.value)}
+                    />
+                  </label>
+
+                  <p className="subtext">
+                    Leave expiration blank to grant access indefinitely.
+                  </p>
+                </>
+              ) : (
+                <div className="error-banner">
+                  Revoke manual premium access for {premiumTarget.username}?
+                  This only removes the manual grant.
+                </div>
+              )}
+
+              {premiumError ? (
+                <div className="error-banner">{premiumError}</div>
+              ) : null}
+            </div>
+
+            <div className="modal-actions">
+              <button
+                className="secondary-button"
+                onClick={closePremiumModal}
+                disabled={premiumSaving}
+              >
+                Cancel
+              </button>
+              <button
+                className={
+                  premiumMode === 'revoke'
+                    ? 'primary-button danger-primary-button'
+                    : 'primary-button'
+                }
+                onClick={submitPremiumUpdate}
+                disabled={premiumSaving}
+              >
+                {premiumSaving
+                  ? 'Saving...'
+                  : premiumMode === 'grant'
+                    ? 'Grant Premium'
+                    : 'Revoke Premium'}
               </button>
             </div>
           </div>
